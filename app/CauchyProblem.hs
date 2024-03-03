@@ -26,6 +26,10 @@ type Vars = Array VarName VarValue
  Function must take time and variables stored into array as inputs and should output some value.
 -}
 type Fn = Time -> Vars -> Float
+{-
+ Array of differential equations.
+-}
+type Fns = Array VarName Fn
 
 {-
  Pair of variable value at `t0` and corresponding differential equation.
@@ -58,5 +62,5 @@ problemU0 = mapProblem fst
 {-
  Returns functions for given problem.
 -}
-problemFns :: Problem -> Array VarName Fn
+problemFns :: Problem -> Fns
 problemFns = mapProblem snd
