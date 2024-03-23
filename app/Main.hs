@@ -22,7 +22,7 @@ main = do
 
                              timegrid = createTimegrid (t0, t1) tau
 
-                             (timeline, result) = methodTrapezoid timegrid problem
+                             (timeline, result) = methodImplicit timegrid problem
 
                              x_numerical_solution = zip timeline [step!'x' | step <- result]
                          in plotData2D "numerical-solution" (Just WithBars) x_numerical_solution
