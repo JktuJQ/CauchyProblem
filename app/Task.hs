@@ -9,7 +9,7 @@ import Data.Array((!))
 r, re, g, m :: Float
 r = 10.0 ^ 4
 re = 6380.0
-g = 0.667
+g = 0.667 * 10 ** (-10.0)
 m = 5.99 * (10.0 ** 24.0)
 
 x0, y0 :: VarValue
