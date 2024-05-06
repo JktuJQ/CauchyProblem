@@ -1,49 +1,39 @@
 module Main where
 
-import Data.Array(listArray, (!))
+import Data.Array((!))
 
 import Plotting
 import CauchyProblem
-import NumericalMethods.ErrorMargin
-import NumericalMethods.Euler
 import Times
-
-solve :: Timegrid -> Problem -> Solution
-solve = methodTrapezoid
+import Task
+import Task.Explicit
 
 main :: IO ()
 main = do
-    let range = (0.0, 1.0) :: (Time, Time)
-    let ((t0, t1), tau) = (range, 0.01) :: ((Time, Time), Time)
+    let range = (0.0, 100.0) :: (Time, Time)
+    let ((t0, t1), tau) = (range, 0.001) :: ((Time, Time), Time)
 
-    let (x0, y0) = (1.0, 1.0) :: (VarValue, VarValue)
-    let original_solution t = (0.5 * exp t) + (0.5 * exp (5 * t))
-    let x_eq _ vars = (2.0 * (vars!'x')) + (vars!'y')
-    let y_eq _ vars = (3.0 * (vars!'x')) + (4.0 * (vars!'y'))
-    
+    _ <- putStrLn "Enter v0_x"
+    line_x <- getLine
+    _ <- putStrLn "Enter v0_y"
+    line_y <- getLine
+
     let timegrid = createTimegrid (t0, t1) tau :: Timegrid
-    let problem = listArray ('x', 'y') [(x0, x_eq), (y0, y_eq)] :: Problem
-    let (timeline, result) = solve timegrid problem :: Solution
+    let (timeline, result) = solve timegrid (x0, y0) (x'0 line_x, y'0 line_y) :: Solution
     let x_numerical_solution = zip timeline [step!'x' | step <- result] :: [(Time, VarValue)]
+    let y_numerical_solution = zip timeline [step!'y' | step <- result] :: [(Time, VarValue)]
+    let xy_numerical_solution = filter (\(x, y) -> re <= sqrt (x * x + y * y) && sqrt (x * x + y * y) <= 10.0 ^ 8) [(step!'x', step!'y') | step <- result]
 
-    let plot_original = plotFn2D "original-solution" range original_solution
-    let plot_numerical = plotData2D "numerical-solution" (Just WithBars) x_numerical_solution :: Plot2D
-    _ <- savePlot2D "plots/x-original-solution.png" [plot_original]
-    _ <- savePlot2D "plots/x-numerical-solution.png" [plot_numerical]
-    _ <- savePlot2D "plots/x-both-solutions.png" [plot_original, plot_numerical]
+    print $ show $ take 100 x_numerical_solution
 
-    let taus = iterateTau 1 10
-    let log_taus = map (negate . log) taus
-    let results0 = [methodExplicit (createTimegrid (t0, t1) tau) problem | tau <- taus]
-    let results1 = [methodTrapezoid (createTimegrid (t0, t1) tau) problem | tau <- taus]
+    let plot_numerical_x = plotData2D "x-numerical-solution" (Just WithBars) x_numerical_solution :: Plot2D
+    let plot_numerical_y = plotData2D "y-numerical-solution" (Just WithBars) y_numerical_solution :: Plot2D
+    --let plot_numerical_xy = plotData2D "numerical-solution" (Just WithBars) xy_numerical_solution :: Plot2D
 
-    let error_check = maxErrorMargin original_solution
-    let error_margins0 = zip log_taus [-log (error_check (zip timeline [step!'x' | step <- result])) | (timeline, result) <- results0]
-    let error_margins1 = zip log_taus [-log (error_check (zip timeline [step!'x' | step <- result])) | (timeline, result) <- results1]
+    _ <- savePlot2D "plots/x-numerical-solution.png" [plot_numerical_x]
+    _ <- savePlot2D "plots/y-numerical-solution.png" [plot_numerical_y]
+    --_ <- savePlot2D "plots/xy-numerical-solution.png" [plot_numerical_xy]
 
-    let plot_errormargin_explicit = plotData2D "error-margin-explicit" (Just WithLines) error_margins0 :: Plot2D
-    let plot_errormargin_trapezoid = plotData2D "error-margin-trapezoid" (Just WithLines) error_margins1 :: Plot2D
-
-    _ <- savePlot2D "plots/x-marginerror.png" [plot_errormargin_explicit, plot_errormargin_trapezoid]
-
+    putStrLn "Done!"
+    _ <- getLine
     print ""

@@ -19,7 +19,7 @@ build-type:         Simple
 extra-doc-files: README.md
 
 common warnings
-    ghc-options: -Wall
+    ghc-options: -Wall, -O2
 
 executable CauchyProblem
     import:           warnings
@@ -28,6 +28,7 @@ executable CauchyProblem
     other-modules: Times,
                    CauchyProblem,
                    NumericalMethods, NumericalMethods.Euler, NumericalMethods.ErrorMargin,
+                   Task, Task.Explicit,
                    Plotting,
 
     build-depends:    base ^>=4.17.2.1,
