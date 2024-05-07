@@ -2,7 +2,8 @@ module Main where
 
 import Data.Array((!))
 
-import Plotting
+import Graphics.EasyPlot
+
 import CauchyProblem
 import Times
 import Task
@@ -10,23 +11,27 @@ import Task.Explicit
 
 main :: IO ()
 main = do
-    let range = (0.0, 10.0) :: (Time, Time)
+    -------- Task data --------
+    let range = (0.0, 1.0) :: (Time, Time)
     let ((t0, t1), tau) = (range, 0.0001) :: ((Time, Time), Time)
 
     _ <- putStrLn "Enter v0_x"
     line_x <- getLine
     _ <- putStrLn "Enter v0_y"
     line_y <- getLine
+    ---------------------------
 
-    let timegrid = createTimegrid (t0, t1) tau :: Timegrid
-    let (_, result) = solve timegrid (x0, y0) (x'0 line_x, y'0 line_y) :: Solution
-    let xy_numerical_solution = filter (\(x, y) -> sqrt (x * x + y * y) <= 10.0 ** 5.0) [(step!'x', step!'y') | step <- result]
+    let (_, result) = solveExplicit (createTimegrid (t0, t1) tau) (x'0 line_x, y'0 line_y) :: Solution
 
-    let plot_numerical_xy = plotData2D "numerical-solution" (Just WithPoints) xy_numerical_solution :: Plot2D
-    
-    let plot_earth = plotData2D "Earth" (Just WithPoints) ([(sqrt (re * re - y * y), y) | y <- [-re..re]] ++ [(-sqrt (re * re - y * y), y) | y <- [-re..re]])
+    let xy_numerical_solution = [(step!'a', step!'c') |
+                                                      step <- takeWhile (\vars ->
+                                                      re <= sqrt (vars!'a' **2.0 + vars!'c' **2.0) &&
+                                                      sqrt (vars!'a' **2.0 + vars!'c' **2.0) <= 10.0 **5.0) result]
+    let plot_numerical_xy = Data2D [Title "Trajectory", Style Dots, Color Red] [] xy_numerical_solution
 
-    _ <- savePlot2D "plots/xy-numerical-solution.png" [plot_numerical_xy, plot_earth]
+    let plot_earth = Data2D [Title "Earth", Style Dots, Color Green] [] ([(sqrt (re * re - y * y), y) | y <- [-re..re]] ++ [(-sqrt (re * re - y * y), y) | y <- [-re..re]])
+
+    _ <- plot (PNG "plots/xy-numerical-solution.png") [plot_numerical_xy, plot_earth]
 
     putStrLn "Done!"
     _ <- getLine

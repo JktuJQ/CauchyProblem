@@ -20,9 +20,7 @@ simpleStep tau fns prev_u t = listArray (bounds prev_u) [(prev_u!name) + tau * (
 -}
 methodExplicit :: Timegrid -> Problem -> Solution
 methodExplicit (tau, timeline) problem =
-    let u0 = problemU0 problem
-        fns = problemFns problem
-
+    let (u0, fns) = problemUnpack problem
         step = stepIter $ simpleStep tau fns
     in (timeline, step u0 (head timeline) (tail timeline))
 
@@ -31,8 +29,7 @@ methodExplicit (tau, timeline) problem =
 -}
 methodTrapezoid :: Timegrid -> Problem -> Solution
 methodTrapezoid (tau, timeline) problem =
-    let u0 = problemU0 problem
-        fns = problemFns problem
+    let (u0, fns) = problemUnpack problem
 
         calculateU :: IterMethod -> IterMethod
         calculateU calculate_inter_u prev_u t =
@@ -43,12 +40,11 @@ methodTrapezoid (tau, timeline) problem =
     in (timeline, step u0 (head timeline) (tail timeline))
 
 {-
- Implementation of Euler's implicit numerical method for Cauchy problem.
+ Implementation of Euler's numerical with recalculating method for Cauchy problem.
 -}
-methodImplicit :: Timegrid -> Problem -> Solution
-methodImplicit (tau, timeline) problem =
-    let u0 = problemU0 problem
-        fns = problemFns problem
+methodExplicitRecalculating :: Timegrid -> Problem -> Solution
+methodExplicitRecalculating (tau, timeline) problem =
+    let (u0, fns) = problemUnpack problem
 
         calculateU :: IterMethod -> IterMethod
         calculateU calculate_inter_u prev_u t =
