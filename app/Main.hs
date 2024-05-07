@@ -19,21 +19,13 @@ main = do
     line_y <- getLine
 
     let timegrid = createTimegrid (t0, t1) tau :: Timegrid
-    let (timeline, result) = solve timegrid (x0, y0) (x'0 line_x, y'0 line_y) :: Solution
-    let x_numerical_solution = zip timeline [step!'x' | step <- result] :: [(Time, VarValue)]
-    let y_numerical_solution = zip timeline [step!'y' | step <- result] :: [(Time, VarValue)]
-    let xy_numerical_solution = filter (\(x, y) -> re <= sqrt (x * x + y * y) && sqrt (x * x + y * y) <= 10.0 ^ 6) [(step!'x', step!'y') | step <- result]
+    let (_, result) = solve timegrid (x0, y0) (x'0 line_x, y'0 line_y) :: Solution
+    let xy_numerical_solution = filter (\(x, y) -> sqrt (x * x + y * y) <= 10.0 ** 5.0) [(step!'x', step!'y') | step <- result]
 
-    --print $ show $ take 100 xy_numerical_solution
-
-    let plot_numerical_x = plotData2D "x-numerical-solution" (Just WithPoints) x_numerical_solution :: Plot2D
-    let plot_numerical_y = plotData2D "y-numerical-solution" (Just WithPoints) y_numerical_solution :: Plot2D
     let plot_numerical_xy = plotData2D "numerical-solution" (Just WithPoints) xy_numerical_solution :: Plot2D
     
     let plot_earth = plotData2D "Earth" (Just WithPoints) ([(sqrt (re * re - y * y), y) | y <- [-re..re]] ++ [(-sqrt (re * re - y * y), y) | y <- [-re..re]])
 
-    _ <- savePlot2D "plots/x-numerical-solution.png" [plot_numerical_x]
-    _ <- savePlot2D "plots/y-numerical-solution.png" [plot_numerical_y]
     _ <- savePlot2D "plots/xy-numerical-solution.png" [plot_numerical_xy, plot_earth]
 
     putStrLn "Done!"
