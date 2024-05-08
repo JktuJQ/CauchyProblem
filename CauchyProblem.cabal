@@ -27,7 +27,7 @@ executable CauchyProblem
     main-is:          Main.hs
     other-modules: Times,
                    CauchyProblem,
-                   NumericalMethods, NumericalMethods.Euler, NumericalMethods.ErrorMargin,
+                   NumericalMethods, NumericalMethods.Methods, NumericalMethods.ErrorMargin,
                    Task, Task.Solve,
 
     build-depends:    base ^>=4.17.2.1,

@@ -15,6 +15,12 @@ import Times
 type IterMethod = Vars -> Time -> Vars
 
 {-
+    `NumericalMethod` type alias represents numerical methods that are giving solution
+    for exact problem by iterating over a timegrid.
+-}
+type NumericalMethod = Timegrid -> Problem -> Solution
+
+{-
  `stepIter` function inductively calculates result of iterative numerical method
   by iterating on a `Timeline`.
 -}
