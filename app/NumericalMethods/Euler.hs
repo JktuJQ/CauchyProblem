@@ -40,10 +40,10 @@ methodTrapezoid (tau, timeline) problem =
     in (timeline, step u0 (head timeline) (tail timeline))
 
 {-
- Implementation of Euler's numerical with recalculating method for Cauchy problem.
+ Implementation of Euler's numerical implicit method for Cauchy problem.
 -}
-methodExplicitRecalculating :: Timegrid -> Problem -> Solution
-methodExplicitRecalculating (tau, timeline) problem =
+methodImplicit :: Timegrid -> Problem -> Solution
+methodImplicit (tau, timeline) problem =
     let (u0, fns) = problemUnpack problem
 
         calculateU :: IterMethod -> IterMethod

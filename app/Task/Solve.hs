@@ -1,4 +1,4 @@
-module Task.Explicit where
+module Task.Solve where
 
 import Data.Array (listArray, (!))
 import Data.Char
@@ -59,3 +59,6 @@ solveExplicit = solve methodExplicit
 
 solveTrapezoid :: Timegrid -> (VarValue, VarValue) -> Solution
 solveTrapezoid = solve methodTrapezoid
+
+solveImplicit :: Timegrid -> (VarValue, VarValue) -> Solution
+solveImplicit = solve methodImplicit

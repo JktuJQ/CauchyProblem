@@ -28,7 +28,7 @@ executable CauchyProblem
     other-modules: Times,
                    CauchyProblem,
                    NumericalMethods, NumericalMethods.Euler, NumericalMethods.ErrorMargin,
-                   Task, Task.Explicit,
+                   Task, Task.Solve,
 
     build-depends:    base ^>=4.17.2.1,
                       array >= 0.5.4 && < 0.6,
