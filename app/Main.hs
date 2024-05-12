@@ -25,7 +25,7 @@ main = do
     _ <- putStrLn "Enter v0_y in km/s - default is 0:"
     v_y <- getLine
 
-    _ <- putStrLn "Choose method which will be used - 1 for Euler's explicit (default), 2 for trapezoid, 3 for Runge-Kutta:";
+    _ <- putStrLn "Choose method which will be used - 1 for Euler's explicit, 2 for trapezoid (default), 3 for Runge-Kutta:";
     index <- getLine
     let methods = [solveExplicit, solveTrapezoid, solveRungeKutta]
     let method = methods!!if index == "" then 1 else read index - 1
@@ -44,8 +44,8 @@ main = do
                  [(-sqrt (re * re - y * y), y) | y <- [-re..re]]
     let plot_earth = Data2D [Title "Earth", Style Dots, Color Green] [] earth
 
-    _ <- plot (if length args == 1 && head args == "X11" then X11 else PNG
-         (if length args == 2 && head args == "PNG" then last args else "plots/simulation.png"))
+    _ <- (if length args == 1 && head args == "X11" then plot' [Interactive] X11
+          else plot (PNG (if length args == 2 && head args == "PNG" then last args else "plots/simulation.png")))
         [plot_numerical_xy, plot_earth]
     
     putStrLn ""
