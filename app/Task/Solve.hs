@@ -1,3 +1,7 @@
+{-
+    `Task.Solve` module applies several numerical methods to exact task
+    to obtain solution.
+-}
 module Task.Solve where
 
 import Data.Array (listArray, (!))
@@ -44,3 +48,4 @@ solveTrapezoid = solve methodTrapezoid
 -}
 solveRungeKutta :: SolveMethod
 solveRungeKutta = solve methodRungeKutta
+

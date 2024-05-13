@@ -1,14 +1,19 @@
+{-
+    `Task.Features` module implements task-specific functions that are used for
+    detailed analysis.
+-}
 module Task.Features where
 
-import Data.Array((!))
+import Data.Array(Array, (!))
 
 import Times
 import CauchyProblem
+import NumericalMethods.ErrorMargin
 import Task
 import Task.Solve
 
 {-
-    By exploiting lazy evaluation, this function takes elements from solution until satellite falls down.
+    This function takes elements from solution until satellite falls down.
 -}
 stopAtFall :: [Vars] -> [Vars]
 stopAtFall = takeWhile (\vars -> re <= distance (vars!'a', vars!'c')) 
@@ -16,14 +21,16 @@ stopAtFall = takeWhile (\vars -> re <= distance (vars!'a', vars!'c'))
 {-
     Checks whether the initial speed is going to crash the satellite or not.
 -}
-checkForFall :: SolveMethod -> (VarValue, VarValue) -> Bool
-checkForFall method (v0_x, v0_y) = 86401 /= length (stopAtFall (snd $ method (createTimegrid (0.0, 86400.0) 1.0) (x'0 $ show v0_x, y'0 $ show v0_y)))
+checkForFall :: Timegrid -> SolveMethod -> (VarValue, VarValue) -> Bool
+checkForFall timegrid method (v0_x, v0_y) = length (snd timegrid) /=
+    length (stopAtFall (snd $ method timegrid (x'0 $ show v0_x, y'0 $ show v0_y)))
 
 {-
     Checks all values for speed until satellite crashes and returns last value (when the satellite crashed).
 -}
-performChecks :: SolveMethod -> ((VarValue, VarValue, Float), (VarValue, VarValue, Float)) -> (VarValue, VarValue)
-performChecks method ((v0_x, till_v0_x, step_x), (v0_y, till_v0_y, step_y)) = takeOneAfter (not . checkForFall method) [(v_x, v_y) | v_x <- [v0_x,v0_x+step_x..till_v0_x], v_y <- [v0_y,v0_y+step_y..till_v0_y]]
+performChecks :: Timegrid -> SolveMethod -> ((Float, Float, Float), (Float, Float, Float)) -> (VarValue, VarValue)
+performChecks timegrid method ((v_min, v_max, v_step), (phi_min, phi_max, phi_step)) = takeOneAfter (not . checkForFall timegrid method)
+    [(v * cos phi, v * sin phi) | v <- [v_min,v_min+v_step..v_max], phi <- [phi_min,phi_min+phi_step..phi_max]]
  where
     takeOneAfter :: ((VarValue, VarValue) -> Bool) -> [(VarValue, VarValue)] -> (VarValue, VarValue)
     takeOneAfter predicate xs = go True (head xs) (tail xs)
