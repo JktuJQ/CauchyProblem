@@ -4,9 +4,9 @@
 module Times where
 
 {-
- `Time` type is an alias for `Float`.
+ `Time` type is an alias for `Double`.
 -}
-type Time = Float
+type Time = Double
 {-
  `Timeline` is an alias for list of time values.
 -}

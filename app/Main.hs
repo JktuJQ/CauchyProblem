@@ -1,20 +1,41 @@
 module Main where
 
 import System.Environment
-import Data.Array((!))
+import Data.Array(listArray, (!))
 
 import Graphics.EasyPlot
 
 import Times
 import CauchyProblem
+import NumericalMethods
+import NumericalMethods.Methods
+import NumericalMethods.ErrorMargin
 import Task
 import Task.Solve
 import Task.Features
 
 {-
+    Tests numerical methods for their errors using exact problem.
+-}
+errorTests :: [String] -> [NumericalMethod] -> IO ()
+errorTests args methods = do
+    let x_eq _ vars = 2.0 * (vars!'x') + (vars!'y')
+    let y_eq _ vars = 3.0 * (vars!'x') + 4.0 * (vars!'y')
+    let problem = listArray ('x', 'y') [(1.0, x_eq), (1.0, y_eq)]
+
+    let original_fn t = (0.0 - 0.5 * exp t) + 1.5 * exp (5.0 * t)
+    
+    let tests = testMethods ((0.0, 1.0), 0.5, 2.0, 15) problem original_fn methods  
+    let methods_errors = [Data2D [Title $ ["Explicit", "Trapezoid", "Runge-Kutta"]!!i, Style Lines] [] [tau_error!!i | tau_error <- tests] | i <- [0..length methods - 1]]
+    _ <- (if length args == 1 && head args == "X11"
+          then plot' [Interactive] X11
+          else plot (PNG (if length args == 2 && head args == "PNG" then last args else "plots/error_test.png"))) methods_errors
+    return ()
+
+{-
     Solves for x and y.
 -}
-xyNumericalSolution :: Timegrid -> SolveMethod -> Float -> Float -> [(VarValue, VarValue)]
+xyNumericalSolution :: Timegrid -> SolveMethod -> Double -> Double -> [(VarValue, VarValue)]
 xyNumericalSolution timegrid method v0_x v0_y = [(step!'a', step!'c') | step <- result]
  where
     result = stopAtFall (snd $ method timegrid (v0_x, v0_y))
@@ -23,17 +44,18 @@ main :: IO ()
 main = do
     args <- getArgs -- X11 or PNG filename
 
-    {- Uncomment to perform checks for optimal initial speed
-    let check = performChecks timegrid method
-    print $ check ((0.0, 5.0, 0.01), (-pi, pi, 0.05))
-    print $ check ((0.0, 5.0, 0.01), ((-pi) / 2.0, pi / 2.0, 0.05))
-    print $ check ((0.0, 5.0, 0.01), ((-pi) / 3.0, pi / 3.0, 0.05))
-    print $ check ((0.0, 5.0, 0.01), ((-pi) / 6.0, pi / 6.0, 0.05))
-    print $ check ((0.0, 5.0, 0.01), (0.0, 1.0, 2.0))
-    -}    
+    {-
+    let check = performChecks (createTimegrid (0.0, 86400.0) 1.0) solveRungeKutta
+    let check_fall = check stopAtFlying
+    print $ check_fall ((1.0, 5.0, 0.1), (-pi, pi, 0.1))
+    print $ check_fall ((1.0, 5.0, 0.1), ((-pi) / 2.0, pi / 2.0, 0.1))
+    print $ check_fall ((1.0, 5.0, 0.1), ((-pi) / 3.0, pi / 3.0, 0.1))
+    print $ check_fall ((1.0, 5.0, 0.1), ((-pi) / 6.0, pi / 6.0, 0.1))
+    print $ check_fall ((1.0, 5.0, 0.1), (0.0, 1.0, 2.0))
+    -}
 
     -------- Task data --------
-    _ <- putStrLn "Enter t1 in seconds - default is 24 days (t0 = 0, t1 - t0 -> simulation's timespan):"
+    _ <- putStrLn "Enter t1 in seconds - default is 24 hours (t0 = 0, t1 - t0 -> simulation's timespan):"
     t_end <- getLine
     _ <- putStrLn "Enter tau in seconds - default is 1 second (precision, simulation's time step):"
     step <- getLine
@@ -54,6 +76,8 @@ main = do
     let ((t0, t1), h) = (range, if step == "" then 1.0 else read step) :: ((Time, Time), Time)
     let timegrid = createTimegrid (t0, t1) h :: Timegrid
     ---------------------------
+
+    _ <- errorTests args [methodExplicit, methodTrapezoid, methodRungeKutta]
     
     let earth = [(sqrt (re * re - y * y), y) | y <- [-re..re]] ++
                  [(-sqrt (re * re - y * y), y) | y <- [-re..re]]
@@ -73,11 +97,11 @@ main = do
     let plot_trajectory3 = Data2D [Title "RungeKutta", Style Dots, Color Blue] [] solution3
     -}
 
-    _ <- (if length args == 1 && head args == "X11" then plot' [Interactive] X11
+    _ <- (if length args == 1 && head args == "X11"
+          then plot' [Interactive] X11
           else plot (PNG (if length args == 2 && head args == "PNG" then last args else "plots/simulation.png")))
         [plot_trajectory, plot_earth]
-        --[plot_trajectory1, plot_trajectory2, plot_trajectory3, plot_earth]
-    
+        -- [plot_trajectory1, plot_trajectory2, plot_trajectory3, plot_earth]
     putStrLn ""
     putStrLn "Done!"
     _ <- getLine

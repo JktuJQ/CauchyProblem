@@ -12,9 +12,9 @@ import Times
 -}
 type VarName = Char
 {-
- `VarValue` type is an alias for `Float`.
+ `VarValue` type is an alias for `Double`.
 -}
-type VarValue = Float
+type VarValue = Double
 {-
  Array of variables.
 -}
@@ -25,7 +25,7 @@ type Vars = Array VarName VarValue
 
  Function must take time and variables stored into array as inputs and should output some value.
 -}
-type Fn = Time -> Vars -> Float
+type Fn = Time -> Vars -> Double
 {-
  Array of differential equations.
 -}

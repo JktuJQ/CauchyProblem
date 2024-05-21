@@ -25,5 +25,5 @@ type NumericalMethod = Timegrid -> Problem -> Solution
   by iterating on a `Timeline`.
 -}
 stepIter :: IterMethod -> Vars -> Time -> Timeline -> [Vars]
-stepIter f prev_step t [] = [f prev_step t]
+stepIter _ _ _ [] = []
 stepIter f prev_step t new_timeline = prev_step : stepIter f (f prev_step t) (head new_timeline) (tail new_timeline)
