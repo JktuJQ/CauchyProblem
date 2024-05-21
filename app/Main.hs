@@ -1,6 +1,8 @@
 module Main where
 
+import System.IO
 import System.Environment
+import Data.Maybe(fromMaybe)
 import Data.Array(listArray, (!))
 
 import Graphics.EasyPlot
@@ -17,91 +19,98 @@ import Task.Features
 {-
     Tests numerical methods for their errors using exact problem.
 -}
-errorTests :: [String] -> [NumericalMethod] -> IO ()
-errorTests args methods = do
-    let x_eq _ vars = 2.0 * (vars!'x') + (vars!'y')
-    let y_eq _ vars = 3.0 * (vars!'x') + 4.0 * (vars!'y')
-    let problem = listArray ('x', 'y') [(1.0, x_eq), (1.0, y_eq)]
+errorTests :: [NumericalMethod] -> [Graph2D Double Double]
+errorTests methods = [Data2D [Title $ ["Explicit", "Trapezoid", "Runge-Kutta"]!!i, Style Lines] [] [tau_error!!i | tau_error <- tests]
+                           | i <- [0..length methods - 1]]
+ where
+    x_eq _ vars = 2.0 * (vars!'x') + (vars!'y')
+    y_eq _ vars = 3.0 * (vars!'x') + 4.0 * (vars!'y')
+    problem = listArray ('x', 'y') [(1.0, x_eq), (1.0, y_eq)]
 
-    let original_fn t = (0.0 - 0.5 * exp t) + 1.5 * exp (5.0 * t)
+    original_fn t = (0.0 - 0.5 * exp t) + 1.5 * exp (5.0 * t)
     
-    let tests = testMethods ((0.0, 1.0), 0.5, 2.0, 15) problem original_fn methods  
-    let methods_errors = [Data2D [Title $ ["Explicit", "Trapezoid", "Runge-Kutta"]!!i, Style Lines] [] [tau_error!!i | tau_error <- tests] | i <- [0..length methods - 1]]
-    _ <- (if length args == 1 && head args == "X11"
-          then plot' [Interactive] X11
-          else plot (PNG (if length args == 2 && head args == "PNG" then last args else "plots/error_test.png"))) methods_errors
-    return ()
+    tests = testMethods ((0.0, 1.0), 0.5, 2.0, 15) problem original_fn methods
+
+{-
+    Checks for characteric speeds.
+-}
+calculateSpeed :: ([Vars] -> [Vars]) -> (Vars -> Bool) -> IO ()
+calculateSpeed filterer checker = do
+    let check_trajectory = performChecks $ check (createTimegrid (0.0, 86400.0) 50.0) solveRungeKutta filterer checker
+    print $ fromMaybe (0.0, 0.0) (check_trajectory ((0.0, 5.0, 0.1), (-pi, pi, 0.1)))
+    print $ fromMaybe (0.0, 0.0) (check_trajectory ((0.0, 5.0, 0.1), ((-pi) / 2.0, pi / 2.0, 0.1)))
+    print $ fromMaybe (0.0, 0.0) (check_trajectory ((0.0, 5.0, 0.1), ((-pi) / 3.0, pi / 3.0, 0.1)))
+    print $ fromMaybe (0.0, 0.0) (check_trajectory ((0.0, 5.0, 0.1), ((-pi) / 6.0, pi / 6.0, 0.1)))
+    print $ fromMaybe (0.0, 0.0) (check_trajectory ((0.0, 5.0, 0.1), (0.0, 1.0, 2.0)))
+    hFlush stdout
 
 {-
     Solves for x and y.
 -}
-xyNumericalSolution :: Timegrid -> SolveMethod -> Double -> Double -> [(VarValue, VarValue)]
-xyNumericalSolution timegrid method v0_x v0_y = [(step!'a', step!'c') | step <- result]
+numericalSolution :: SolveMethod -> Timegrid -> Double -> Double -> [Graph2D Double Double]
+numericalSolution method timegrid v0_x v0_y = [Data2D [Title "Trajectory", Style Dots, Color Red] [] result,
+                                               Data2D [Title "Earth", Style Lines, Color Green] [] earth]
  where
-    result = stopAtFall (snd $ method timegrid (v0_x, v0_y))
+    solution = stopAtFall (snd $ method timegrid (v0_x, v0_y))
+    result = [(step!'a', step!'c') | step <- solution]
+
+    earth = [(re * cos phi, re * sin phi) | phi <- [-pi,-pi+0.05..pi]]
+
+
+{-
+    Plots using command line args.
+-}
+plotAll :: [String] -> [Graph2D Double Double] -> IO Bool
+plotAll args = if length args == 1 && head args == "X11"
+           then plot' [Interactive] X11
+           else plot (PNG (if length args == 2 && head args == "PNG" then last args else "plots/plot.png"))
 
 main :: IO ()
 main = do
     args <- getArgs -- X11 or PNG filename
 
-    {-
-    let check = performChecks (createTimegrid (0.0, 86400.0) 1.0) solveRungeKutta
-    let check_fall = check stopAtFlying
-    print $ check_fall ((1.0, 5.0, 0.1), (-pi, pi, 0.1))
-    print $ check_fall ((1.0, 5.0, 0.1), ((-pi) / 2.0, pi / 2.0, 0.1))
-    print $ check_fall ((1.0, 5.0, 0.1), ((-pi) / 3.0, pi / 3.0, 0.1))
-    print $ check_fall ((1.0, 5.0, 0.1), ((-pi) / 6.0, pi / 6.0, 0.1))
-    print $ check_fall ((1.0, 5.0, 0.1), (0.0, 1.0, 2.0))
-    -}
+    _ <- putStrLn "Print 'trajectory' to plot a trajectory of satellite (default);"
+    _ <- putStrLn "Print 'test' to plot error margins of all methods in a negative logarithmic scale;"
+    _ <- putStrLn "Print 'fall' to calculate speeds for 5 angles that lead to satellite fall;"
+    _ <- putStrLn "Print 'fly' to calculate speeds for 5 angles that lead to satellite flying out;"
+    choice <- getLine
 
-    -------- Task data --------
-    _ <- putStrLn "Enter t1 in seconds - default is 24 hours (t0 = 0, t1 - t0 -> simulation's timespan):"
-    t_end <- getLine
-    _ <- putStrLn "Enter tau in seconds - default is 1 second (precision, simulation's time step):"
-    step <- getLine
+    plots <- case choice of
+                  "test" -> return $ errorTests [methodExplicit, methodTrapezoid, methodRungeKutta]
+                  "fall" -> do
+                    _ <- calculateSpeed id (\vars -> re >= distance (vars!'a', vars!'c'))
+                    return [Data2D [Title "Nothing", Style Lines, Color Green] [] [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)]]
+                  "fly"  -> do
+                    _ <- putStrLn "Which distance from Earth is considered as a threshold (default is 10^5 km)?"
+                    d <- getLine
+                    _ <- calculateSpeed stopAtFall (\vars -> distance (vars!'a', vars!'c') >= if d == "" then 10.0 ** 5.0 else read d)
+                    return [Data2D [Title "Nothing", Style Lines, Color Green] [] [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)]]
+                  _      -> do
+                    _ <- putStrLn "Enter t1 in seconds - default is 24 hours (t0 = 0, t1 - t0 -> simulation's timespan):"
+                    t_end <- getLine
+                    _ <- putStrLn "Enter tau in seconds - default is 1 second (precision, simulation's time step):"
+                    step <- getLine
+                    
+                    _ <- putStrLn "Enter v0_x in km/s - default is 0 km/s:"
+                    v_x <- getLine
+                    _ <- putStrLn "Enter v0_y in km/s - default is 0 km/s:"
+                    v_y <- getLine
+                    let v0_x = x'0 v_x
+                    let v0_y = y'0 v_y
+                    
+                    _ <- putStrLn "Choose method which will be used - 1 for Euler's explicit, 2 for trapezoid (default), 3 for Runge-Kutta:";
+                    index <- getLine
+                    let methods = [solveExplicit, solveTrapezoid, solveRungeKutta]
+                    let method = methods!!if index == "" then 1 else read index - 1
+                    
+                    let range = (0.0, if t_end == "" then 86400.0 else read t_end)
+                    let ((t0, t1), h) = (range, if step == "" then 1.0 else read step)
+                    let timegrid = createTimegrid (t0, t1) h
 
-    _ <- putStrLn "Enter v0_x in km/s - default is 0 km/s:"
-    v_x <- getLine
-    _ <- putStrLn "Enter v0_y in km/s - default is 0 km/s:"
-    v_y <- getLine
-    let v0_x = x'0 v_x
-    let v0_y = y'0 v_y
-
-    _ <- putStrLn "Choose method which will be used - 1 for Euler's explicit, 2 for trapezoid (default), 3 for Runge-Kutta:";
-    index <- getLine
-    let methods = [solveExplicit, solveTrapezoid, solveRungeKutta]
-    let method = methods!!if index == "" then 1 else read index - 1
-
-    let range = (0.0, if t_end == "" then 86400.0 else read t_end) :: (Time, Time)
-    let ((t0, t1), h) = (range, if step == "" then 1.0 else read step) :: ((Time, Time), Time)
-    let timegrid = createTimegrid (t0, t1) h :: Timegrid
-    ---------------------------
-
-    _ <- errorTests args [methodExplicit, methodTrapezoid, methodRungeKutta]
+                    return $ numericalSolution method timegrid v0_x v0_y
     
-    let earth = [(sqrt (re * re - y * y), y) | y <- [-re..re]] ++
-                 [(-sqrt (re * re - y * y), y) | y <- [-re..re]]
-    let plot_earth = Data2D [Title "Earth", Style Dots, Color Green] [] earth
-    
-    let solution = xyNumericalSolution timegrid method v0_x v0_y
-    let plot_trajectory = Data2D [Title "Trajectory", Style Dots, Color Red] [] solution
+    _ <- plotAll args plots
 
-    {-
-    let solution1 = xyNumericalSolution timegrid solveExplicit v0_x v0_y
-    let plot_trajectory1 = Data2D [Title "Explicit", Style Dots, Color Red] [] solution1
-
-    let solution2 = xyNumericalSolution timegrid solveTrapezoid v0_x v0_y
-    let plot_trajectory2 = Data2D [Title "Trapezoid", Style Dots, Color Green] [] solution2
-
-    let solution3 = xyNumericalSolution timegrid solveRungeKutta v0_x v0_y
-    let plot_trajectory3 = Data2D [Title "RungeKutta", Style Dots, Color Blue] [] solution3
-    -}
-
-    _ <- (if length args == 1 && head args == "X11"
-          then plot' [Interactive] X11
-          else plot (PNG (if length args == 2 && head args == "PNG" then last args else "plots/simulation.png")))
-        [plot_trajectory, plot_earth]
-        -- [plot_trajectory1, plot_trajectory2, plot_trajectory3, plot_earth]
     putStrLn ""
     putStrLn "Done!"
     _ <- getLine
