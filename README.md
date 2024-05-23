@@ -2,23 +2,24 @@
 
 This package implements different numerical methods for solving Cauchy problem.
 
-It supplies several numerical methods, both explicit and implicit.
-
 ### Application
 This package also solves task that involves differential equations by using those numerical methods.
 The task is in the 'executable/task.png' file.
+
+![task](./executable/task.png)
+
 
 Solution uses four differential equations: two for second derivative (acceleration) that are already given
 and that the first derivative is the speed. We have initial values for all four equations (dx/dt, dv_x/dt, dy/dt, dv_y/dt), so
 the task now becomes just a Cauchy Initial Value Problem!
 
-In the 'executable' folder you can find executable for solving.
+In the 'executable' folder you can find executable for solving, testing and many more!
 It has two command line arguments -
 
 1. `./CauchyProblem X11` uses Linux X11 to interactively display plot of solution (works only if X11 is installed on your system).
-2. `./CauchyProblem PNG filename` saves plot to file (due to absence of interactivity you may not like chosen scaling - but usually it is fine if yopu tweak initial values).
+2. `./CauchyProblem PNG filename` saves plot to file (due to absence of interactivity you may not like chosen scaling - but usually it is fine if you tweak initial values).
 
-By default it saves plot to 'plots/simulation.png' file.
+By default it saves plot to 'plots/plot.png' file.
 
 There are few configurations in the executable itself - it will ask some input from you, so just follow instuctions that are given to you by the app.
 
