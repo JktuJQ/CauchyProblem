@@ -120,14 +120,14 @@ main = do
     
     getDataForSpeeds :: IO ((Double, Double), (Double, Double))
     getDataForSpeeds = do
-        _ <- putStrLn "Enter minimal velocity module - default is 0 km/s:"
+        _ <- putStrLn "Enter minimal velocity module in km/s - default is 0 km/s:"
         v_min <- getLine
-        _ <- putStrLn "Enter maximal velocity module - default is 5 km/s:"
+        _ <- putStrLn "Enter maximal velocity module in km/s - default is 5 km/s:"
         v_max <- getLine
     
-        _ <- putStrLn "Enter minimal angle - default is -180 degrees:"
+        _ <- putStrLn "Enter minimal angle in degrees - default is -180 degrees:"
         angle_min <- getLine
-        _ <- putStrLn "Enter maximal angle - default is 180 degrees:"
+        _ <- putStrLn "Enter maximal angle in degrees - default is 180 degrees:"
         angle_max <- getLine
     
         return ((if v_min == "" then 0.0 else read v_min, if v_max == "" then 5.0 else read v_max),
